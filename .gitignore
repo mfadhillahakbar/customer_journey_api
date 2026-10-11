@@ -35,6 +35,7 @@ ENV/
 .env.*
 !.env.example
 *.json
+!*.postman_collection.json
 !tests/mock_*.json
 credentials/
 

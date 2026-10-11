@@ -1,0 +1,404 @@
+{
+  "info": {
+    "_postman_id": "a9b1c2d3-e4f5-6789-0123-abcdefabcdef",
+    "name": "Customer Journey Analytics API",
+    "description": "Collection resmi untuk pengujian REST API Analisis Customer Journey dari Google BigQuery (FastAPI).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "development-secret-key-change-in-production",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Readiness",
+      "item": [
+        {
+          "name": "Liveness Health Check (Tanpa Auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Memeriksa apakah service aplikasi berjalan. Tidak memicu query BigQuery."
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Probe (Cek Koneksi BigQuery)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health", "ready"]
+            },
+            "description": "Memverifikasi apakah kredensial dan koneksi Google BigQuery siap menerima traffic."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Endpoint B - Ringkasan Statistik Tombol",
+      "item": [
+        {
+          "name": "Semua Tombol (Default / Tanpa Filter)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks?page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Mengambil seluruh ringkasan statistik klik tombol."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Periode Tanggal (start_date & end_date)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks?start_date=2026-09-01&end_date=2026-09-30&page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Menerapkan filter rentang tanggal inklusif pada kolom event_date."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Master Customer (Role, Depo, Region, Area)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks?role=Sales&region=Jawa Barat&depo=Depo Tangerang&area=Tangerang Kota",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "Sales"
+                },
+                {
+                  "key": "region",
+                  "value": "Jawa Barat"
+                },
+                {
+                  "key": "depo",
+                  "value": "Depo Tangerang"
+                },
+                {
+                  "key": "area",
+                  "value": "Tangerang Kota"
+                }
+              ]
+            },
+            "description": "Menerapkan filter atribut customer dari tabel master customer all_customer_rangkul."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Spesifik Tombol & Screen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks?screen_name=checkout&button_name=checkout_submit&event_name=begin_checkout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"],
+              "query": [
+                {
+                  "key": "screen_name",
+                  "value": "checkout"
+                },
+                {
+                  "key": "button_name",
+                  "value": "checkout_submit"
+                },
+                {
+                  "key": "event_name",
+                  "value": "begin_checkout"
+                }
+              ]
+            },
+            "description": "Menyaring kombinasi screen dan nama tombol tertentu."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Endpoint C - Daftar Pengguna (Users)",
+      "item": [
+        {
+          "name": "Pengguna yang Mengklik Tombol Tertentu (Wajib button_name)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=checkout_submit&page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks", "users"],
+              "query": [
+                {
+                  "key": "button_name",
+                  "value": "checkout_submit",
+                  "description": "Parameter wajib"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Mengembalikan daftar user_id unik, user_clicks, waktu event terakhir, dan detail customer."
+          },
+          "response": []
+        },
+        {
+          "name": "Pengguna dengan Filter Tanggal & Master Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=checkout_submit&start_date=2026-09-01&end_date=2026-09-30&role=Sales&region=Jawa Barat&page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks", "users"],
+              "query": [
+                {
+                  "key": "button_name",
+                  "value": "checkout_submit"
+                },
+                {
+                  "key": "start_date",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "role",
+                  "value": "Sales"
+                },
+                {
+                  "key": "region",
+                  "value": "Jawa Barat"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Daftar pengguna tombol tertentu dengan filter tanggal dan customer."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Endpoint D - Inspeksi Event Mentah (Opsional)",
+      "item": [
+        {
+          "name": "Inspeksi Event Mentah Berdasarkan Tombol",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/events?button_name=checkout_submit&page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks", "events"],
+              "query": [
+                {
+                  "key": "button_name",
+                  "value": "checkout_submit"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Mengembalikan data event individual secara paginated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Pengujian Validasi Error",
+      "item": [
+        {
+          "name": "Error Rentang Tanggal Terbalik (400 Bad Request)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks?start_date=2026-09-30&end_date=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-09-01"
+                }
+              ]
+            },
+            "description": "Menguji respon error kode INVALID_DATE_RANGE saat start_date lebih besar dari end_date."
+          },
+          "response": []
+        },
+        {
+          "name": "Error Parameter Wajib Hilang (422 Unprocessable Entity)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks", "users"]
+            },
+            "description": "Menguji respon error saat memanggil endpoint users tanpa menyertakan button_name."
+          },
+          "response": []
+        },
+        {
+          "name": "Error API Key Tidak Ada / Salah (401 Unauthorized)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "kunci-yang-salah",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "button-clicks"]
+            },
+            "description": "Menguji respon penolakan 401 UNAUTHORIZED saat X-API-Key tidak valid."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
