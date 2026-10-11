@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -81,6 +82,11 @@ def create_app(settings: Settings = None) -> FastAPI:
 
     # 5. Mount API v1 router with prefix /api/v1
     app.include_router(api_v1_router, prefix=settings.API_PREFIX)
+
+
+    @app.get("/", include_in_schema=False)
+    async def root():
+        return RedirectResponse(url="/docs")
 
     return app
 
