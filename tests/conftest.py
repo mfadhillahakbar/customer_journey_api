@@ -1,0 +1,214 @@
+import pytest
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+from fastapi.testclient import TestClient
+
+from app.core.config import Settings, get_settings
+from app.core.exceptions import BigQueryExecutionError
+from app.main import create_app
+from app.repositories.bigquery_repository import BigQueryRepository, get_bigquery_repository
+from app.schemas.button_clicks import ButtonClickFilters
+
+
+class MockBigQueryRepository(BigQueryRepository):
+    """
+    Mock implementation of BigQueryRepository for unit testing.
+    Runs entirely without Google Cloud credentials or network calls.
+    """
+
+    def __init__(self, settings: Settings):
+        super().__init__(settings=settings, client=None)
+        self.should_fail: bool = False
+        self.empty_result: bool = False
+        self.is_ready: bool = True
+        self.last_filters: Optional[ButtonClickFilters] = None
+
+    def check_connection(self) -> bool:
+        return self.is_ready
+
+    def get_button_clicks_summary(
+        self,
+        filters: ButtonClickFilters,
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        self.last_filters = filters
+
+        if self.should_fail:
+            raise BigQueryExecutionError("Simulated BigQuery failure for testing.")
+
+        if self.empty_result:
+            return [], 0
+
+        # Sample mock aggregation rows adhering to business query calculations
+        all_data = [
+            {
+                "screen_name": "checkout",
+                "button_name": "checkout_submit",
+                "event_name": "begin_checkout",
+                "total_clicks": 1500,
+                "total_users": 750,
+                "user_avg_clicks": 2,  # 1500 / 750 = 2
+            },
+            {
+                "screen_name": "home_page",
+                "button_name": "promo_banner_click",
+                "event_name": "banner_click",
+                "total_clicks": 800,
+                "total_users": 400,
+                "user_avg_clicks": 2,
+            },
+            {
+                "screen_name": None,  # Preserved screen_name NULL
+                "button_name": "floating_help_btn",
+                "event_name": "help_click",
+                "total_clicks": 120,
+                "total_users": 60,
+                "user_avg_clicks": 2,
+            },
+        ]
+
+        # Filter by button_name if provided
+        if filters.button_name:
+            all_data = [d for d in all_data if d["button_name"] == filters.button_name]
+
+        # Filter by screen_name if provided
+        if filters.screen_name:
+            all_data = [d for d in all_data if d["screen_name"] == filters.screen_name]
+
+        total_records = len(all_data)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paged_data = all_data[start_idx:end_idx]
+
+        return paged_data, total_records
+
+    def get_button_click_users(
+        self,
+        filters: ButtonClickFilters,
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        self.last_filters = filters
+
+        if self.should_fail:
+            raise BigQueryExecutionError("Simulated BigQuery failure for testing.")
+
+        if self.empty_result:
+            return [], 0
+
+        all_users = [
+            {
+                "user_id": "EX09202601674",
+                "user_clicks": 5,
+                "last_event_timestamp": datetime.fromisoformat("2026-09-16T12:57:19.821000"),
+                "role": "Sales",
+                "depo": "Depo Tangerang",
+                "region": "Jawa Barat",
+                "area": "Tangerang Kota",
+            },
+            {
+                "user_id": "EX09202609999",
+                "user_clicks": 3,
+                "last_event_timestamp": datetime.fromisoformat("2026-09-16T10:15:00.000000"),
+                "role": "Sales",
+                "depo": "Depo Tangerang",
+                "region": "Jawa Barat",
+                "area": "Tangerang Barat",
+            },
+        ]
+
+        if filters.role:
+            all_users = [u for u in all_users if u["role"] == filters.role]
+        if filters.depo:
+            all_users = [u for u in all_users if u["depo"] == filters.depo]
+        if filters.region:
+            all_users = [u for u in all_users if u["region"] == filters.region]
+        if filters.area:
+            all_users = [u for u in all_users if u["area"] == filters.area]
+
+        total_records = len(all_users)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paged_users = all_users[start_idx:end_idx]
+
+        return paged_users, total_records
+
+    def get_raw_events(
+        self,
+        filters: ButtonClickFilters,
+        user_id: Optional[str],
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        if self.should_fail:
+            raise BigQueryExecutionError("Simulated BigQuery failure for testing.")
+
+        if self.empty_result:
+            return [], 0
+
+        events = [
+            {
+                "event_date": "2026-09-16",
+                "event_timestamp": datetime.fromisoformat("2026-09-16T12:46:41.980000"),
+                "user_id": "EX09202601674",
+                "user_pseudo_id": "009ee1be58bce5c5bed77bdd5eca074f",
+                "event_name": "begin_checkout",
+                "screen_name": "checkout",
+                "button_name": "checkout_submit",
+                "ga_session_id": "1694868400",
+                "ga_session_number": 1,
+                "platform": "ANDROID",
+                "device_category": "mobile",
+                "device_brand": "Samsung",
+                "device_model": "Galaxy S23",
+                "os_version": "Android 14",
+                "city": "Tangerang",
+                "app_version": "3.15.17",
+                "role": "Sales",
+                "depo": "Depo Tangerang",
+                "region": "Jawa Barat",
+                "area": "Tangerang Kota",
+            }
+        ]
+
+        return events, len(events)
+
+
+@pytest.fixture
+def test_settings() -> Settings:
+    return Settings(
+        ENVIRONMENT="testing",
+        API_KEY="test-secret-api-key-12345",
+        ALLOWED_ORIGINS="http://localhost:3000",
+        GCP_PROJECT_ID="rangkul-355bb",
+        BQ_DATASET="analytics_journey",
+        BQ_EVENTS_TABLE="rangkul-355bb.analytics_journey.raw_events_agustus_september",
+        BQ_CUSTOMERS_TABLE="rangkul-355bb.analytics_journey.all_customer_rangkul",
+    )
+
+
+@pytest.fixture
+def mock_repo(test_settings: Settings) -> MockBigQueryRepository:
+    return MockBigQueryRepository(settings=test_settings)
+
+
+@pytest.fixture
+def app(test_settings: Settings, mock_repo: MockBigQueryRepository):
+    application = create_app(settings=test_settings)
+    application.dependency_overrides[get_settings] = lambda: test_settings
+    application.dependency_overrides[get_bigquery_repository] = lambda: mock_repo
+    return application
+
+
+@pytest.fixture
+def client(app) -> TestClient:
+    return TestClient(
+        app,
+        headers={"X-API-Key": "test-secret-api-key-12345"},
+    )
+
+
+@pytest.fixture
+def unauthenticated_client(app) -> TestClient:
+    return TestClient(app)

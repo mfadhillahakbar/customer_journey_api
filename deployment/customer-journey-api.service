@@ -1,0 +1,41 @@
+[Unit]
+Description=Customer Journey Analytics REST API (FastAPI)
+After=network.target
+
+[Service]
+# User & Group non-root untuk keamanan eksekusi
+User=www-data
+Group=www-data
+
+# Direktori kerja project pada server Linux (sesuaikan jika berbeda)
+WorkingDirectory=/opt/customer-journey-api
+
+# Muat environment variable dari file .env yang diamankan (chmod 600)
+EnvironmentFile=/opt/customer-journey-api/.env
+
+# Menjalankan Uvicorn multi-worker untuk production
+# Rumus umum worker: (2 x jumlah CPU core) + 1
+ExecStart=/opt/customer-journey-api/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 4 \
+    --log-config /opt/customer-journey-api/logging.conf \
+    --no-access-log \
+    --proxy-headers \
+    --forwarded-allow-ips='*'
+
+# Restart policy saat terjadi crash
+Restart=always
+RestartSec=5s
+
+# Limit proses dan deskriptor file untuk query data analitik
+LimitNOFILE=65535
+TimeoutStopSec=30
+
+# Standar output ke systemd journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=customer-journey-api
+
+[Install]
+WantedBy=multi-user.target
