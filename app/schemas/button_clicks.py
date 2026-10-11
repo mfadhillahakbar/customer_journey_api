@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.common import PaginationMetadata
 
@@ -88,7 +88,7 @@ class RawEventItem(BaseModel):
     event_name: Optional[str] = None
     screen_name: Optional[str] = None
     button_name: Optional[str] = None
-    ga_session_id: Optional[str] = None
+    ga_session_id: Optional[Union[str, int]] = None
     ga_session_number: Optional[int] = None
     platform: Optional[str] = None
     device_category: Optional[str] = None
