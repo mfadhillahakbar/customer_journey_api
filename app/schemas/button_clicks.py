@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.common import PaginationMetadata
@@ -105,3 +106,67 @@ class RawEventsResponse(BaseModel):
     data: List[RawEventItem]
     pagination: PaginationMetadata
     filters_applied: Optional[FiltersApplied] = None
+
+
+class DashboardPeriod(str, Enum):
+    """Preset periode untuk dashboard analytics."""
+    last_7_days = "last_7_days"
+    last_30_days = "last_30_days"
+    yesterday = "yesterday"
+    today = "today"
+    custom = "custom"
+
+
+class DashboardTopButton(BaseModel):
+    """Tombol terpopuler dalam periode terfilter."""
+    button_name: Optional[str] = None
+    total_clicks: int = 0
+
+
+class DashboardKPI(BaseModel):
+    """KPI utama dashboard analytics."""
+    total_clicks: int
+    unique_users: int
+    avg_clicks_per_user: float
+    top_button: DashboardTopButton
+
+
+class DashboardDailyTrendItem(BaseModel):
+    """Data point tren klik harian."""
+    date: str
+    total_clicks: int
+
+
+class DashboardFeatureDistributionItem(BaseModel):
+    """Distribusi klik berdasarkan kategori fitur."""
+    category: str
+    total_clicks: int
+
+
+class DashboardDateRange(BaseModel):
+    """Rentang tanggal efektif yang digunakan query."""
+    start_date: str
+    end_date: str
+
+
+class DashboardFiltersApplied(BaseModel):
+    """Metadata filter dashboard yang diterapkan konsisten ke semua agregasi."""
+    period: DashboardPeriod
+    date_range: DashboardDateRange
+    role: Optional[str] = None
+    region: Optional[str] = None
+    depo: Optional[str] = None
+    area: Optional[str] = None
+
+
+class DashboardCharts(BaseModel):
+    """Kumpulan data grafik dashboard."""
+    daily_trend: List[DashboardDailyTrendItem]
+    feature_distribution: List[DashboardFeatureDistributionItem]
+
+
+class DashboardAnalyticsResponse(BaseModel):
+    """Response endpoint dashboard analytics terpadu."""
+    kpi: DashboardKPI
+    charts: DashboardCharts
+    filters_applied: DashboardFiltersApplied

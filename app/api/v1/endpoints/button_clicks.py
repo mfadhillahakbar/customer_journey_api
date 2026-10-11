@@ -5,6 +5,8 @@ from app.core.exceptions import InvalidDateRangeException
 from app.core.security import verify_api_key
 from app.schemas.button_clicks import (
     ButtonClickFilters,
+    DashboardAnalyticsResponse,
+    DashboardPeriod,
     ButtonClickSummaryResponse,
     ButtonClickUsersResponse,
     RawEventsResponse,
@@ -151,3 +153,36 @@ async def get_raw_events(
     )
 
     return service.get_raw_events(filters=filters, user_id=user_id, page=page, page_size=page_size)
+
+
+@router.get(
+    "/dashboard",
+    response_model=DashboardAnalyticsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Ringkasan Dashboard Analytics",
+    description=(
+        "Mengembalikan KPI dan data grafik dashboard dalam satu response. "
+        "Mendukung period preset (7 hari terakhir, 30 hari terakhir, kemarin, hari ini, custom) "
+        "serta filter opsional role, depo, region, dan area."
+    ),
+)
+async def get_dashboard_analytics(
+    period: DashboardPeriod = Query(default=DashboardPeriod.last_7_days, description="Preset periode dashboard"),
+    start_date: Optional[date] = Query(default=None, description="Tanggal awal untuk period=custom (YYYY-MM-DD)"),
+    end_date: Optional[date] = Query(default=None, description="Tanggal akhir untuk period=custom (YYYY-MM-DD)"),
+    role: Optional[str] = Query(default=None, description="Filter role customer dari tabel master"),
+    depo: Optional[str] = Query(default=None, description="Filter depo customer dari tabel master"),
+    region: Optional[str] = Query(default=None, description="Filter region customer dari tabel master"),
+    area: Optional[str] = Query(default=None, description="Filter area customer dari tabel master"),
+    service: ButtonClicksService = Depends(),
+) -> DashboardAnalyticsResponse:
+    """Endpoint dashboard agregasi KPI dan grafik dalam satu payload."""
+    return service.get_dashboard_analytics(
+        period=period,
+        start_date=start_date,
+        end_date=end_date,
+        role=role,
+        depo=depo,
+        region=region,
+        area=area,
+    )

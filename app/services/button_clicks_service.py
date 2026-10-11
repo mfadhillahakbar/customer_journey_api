@@ -1,9 +1,19 @@
 import math
+from datetime import date, timedelta
 from typing import Optional
 from fastapi import Depends
-from app.core.exceptions import BigQueryReadinessError
+from app.core.exceptions import BigQueryReadinessError, InvalidDateRangeException
 from app.repositories.bigquery_repository import BigQueryRepository, get_bigquery_repository
 from app.schemas.button_clicks import (
+    DashboardAnalyticsResponse,
+    DashboardCharts,
+    DashboardDateRange,
+    DashboardDailyTrendItem,
+    DashboardFeatureDistributionItem,
+    DashboardFiltersApplied,
+    DashboardKPI,
+    DashboardPeriod,
+    DashboardTopButton,
     ButtonClickFilters,
     ButtonClickItem,
     ButtonClickSummaryResponse,
@@ -163,6 +173,106 @@ class ButtonClicksService:
             data=data,
             pagination=self._calculate_pagination(page, page_size, total_records),
             filters_applied=self._build_filters_applied(filters),
+        )
+
+    def _resolve_dashboard_date_range(
+        self,
+        period: DashboardPeriod,
+        start_date: Optional[date],
+        end_date: Optional[date],
+    ) -> tuple[date, date]:
+        """Resolve effective date range from period preset or custom input."""
+        today = date.today()
+
+        if period == DashboardPeriod.today:
+            return today, today
+
+        if period == DashboardPeriod.yesterday:
+            yesterday = today - timedelta(days=1)
+            return yesterday, yesterday
+
+        if period == DashboardPeriod.last_7_days:
+            return today - timedelta(days=6), today
+
+        if period == DashboardPeriod.last_30_days:
+            return today - timedelta(days=29), today
+
+        if period == DashboardPeriod.custom:
+            if start_date is None or end_date is None:
+                raise InvalidDateRangeException("Untuk period=custom, start_date dan end_date wajib diisi.")
+            if start_date > end_date:
+                raise InvalidDateRangeException("start_date harus lebih awal dari atau sama dengan end_date.")
+            return start_date, end_date
+
+        raise InvalidDateRangeException("Nilai period tidak dikenali.")
+
+    def get_dashboard_analytics(
+        self,
+        period: DashboardPeriod,
+        start_date: Optional[date],
+        end_date: Optional[date],
+        role: Optional[str],
+        depo: Optional[str],
+        region: Optional[str],
+        area: Optional[str],
+    ) -> DashboardAnalyticsResponse:
+        """Process unified dashboard analytics response (KPI + charts)."""
+        resolved_start_date, resolved_end_date = self._resolve_dashboard_date_range(
+            period=period,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        filters = ButtonClickFilters(
+            start_date=resolved_start_date,
+            end_date=resolved_end_date,
+            role=role,
+            depo=depo,
+            region=region,
+            area=area,
+        )
+
+        payload = self.repository.get_dashboard_analytics(filters=filters)
+        kpi_raw = payload.get("kpi") or {}
+        top_button_raw = kpi_raw.get("top_button") or {}
+
+        return DashboardAnalyticsResponse(
+            kpi=DashboardKPI(
+                total_clicks=int(kpi_raw.get("total_clicks") or 0),
+                unique_users=int(kpi_raw.get("unique_users") or 0),
+                avg_clicks_per_user=round(float(kpi_raw.get("avg_clicks_per_user") or 0.0), 2),
+                top_button=DashboardTopButton(
+                    button_name=top_button_raw.get("button_name"),
+                    total_clicks=int(top_button_raw.get("total_clicks") or 0),
+                ),
+            ),
+            charts=DashboardCharts(
+                daily_trend=[
+                    DashboardDailyTrendItem(
+                        date=str(item.get("label")),
+                        total_clicks=int(item.get("total_clicks") or 0),
+                    )
+                    for item in (payload.get("daily_trend") or [])
+                ],
+                feature_distribution=[
+                    DashboardFeatureDistributionItem(
+                        category=str(item.get("label")),
+                        total_clicks=int(item.get("total_clicks") or 0),
+                    )
+                    for item in (payload.get("feature_distribution") or [])
+                ],
+            ),
+            filters_applied=DashboardFiltersApplied(
+                period=period,
+                date_range=DashboardDateRange(
+                    start_date=str(resolved_start_date),
+                    end_date=str(resolved_end_date),
+                ),
+                role=role,
+                region=region,
+                depo=depo,
+                area=area,
+            ),
         )
 
     def check_readiness(self) -> bool:

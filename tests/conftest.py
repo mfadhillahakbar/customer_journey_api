@@ -174,6 +174,56 @@ class MockBigQueryRepository(BigQueryRepository):
 
         return events, len(events)
 
+    def get_dashboard_analytics(self, filters: ButtonClickFilters) -> Dict[str, Any]:
+        self.last_filters = filters
+
+        if self.should_fail:
+            raise BigQueryExecutionError("Simulated BigQuery failure for testing.")
+
+        if self.empty_result:
+            return {
+                "kpi": {
+                    "total_clicks": 0,
+                    "unique_users": 0,
+                    "avg_clicks_per_user": 0.0,
+                    "top_button": None,
+                },
+                "daily_trend": [],
+                "feature_distribution": [],
+            }
+
+        return {
+            "kpi": {
+                "total_clicks": 200,
+                "unique_users": 50,
+                "avg_clicks_per_user": 4.0,
+                "top_button": {
+                    "button_name": "checkout_submit",
+                    "total_clicks": 75,
+                },
+            },
+            "daily_trend": [
+                {
+                    "label": "2026-10-10",
+                    "total_clicks": 120,
+                },
+                {
+                    "label": "2026-10-11",
+                    "total_clicks": 80,
+                },
+            ],
+            "feature_distribution": [
+                {
+                    "label": "checkout",
+                    "total_clicks": 120,
+                },
+                {
+                    "label": "home_page",
+                    "total_clicks": 80,
+                },
+            ],
+        }
+
 
 @pytest.fixture
 def test_settings() -> Settings:

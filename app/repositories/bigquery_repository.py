@@ -444,6 +444,137 @@ class BigQueryRepository:
         ]
         return cleaned_rows, total_records
 
+    def get_dashboard_analytics(
+        self,
+        filters: ButtonClickFilters,
+    ) -> Dict[str, Any]:
+        """
+        Endpoint Dashboard: mengembalikan KPI dan chart dalam satu query.
+        Semua komponen memakai filter yang sama untuk menjaga konsistensi hasil.
+        """
+        where_clauses, params = self._build_where_clauses(filters)
+        where_sql = ("AND " + " AND ".join(where_clauses)) if where_clauses else ""
+
+        events_table = self.settings.BQ_EVENTS_TABLE
+        customers_table = self.settings.BQ_CUSTOMERS_TABLE
+
+        query = f"""
+        WITH dedup_customers AS (
+            SELECT
+                user_id,
+                role,
+                depo,
+                region,
+                area
+            FROM (
+                SELECT
+                    user_id,
+                    role,
+                    depo,
+                    region,
+                    area,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY user_id
+                        ORDER BY user_id
+                    ) AS _rn
+                FROM `{customers_table}`
+                WHERE user_id IS NOT NULL AND user_id != ''
+            )
+            WHERE _rn = 1
+        ),
+        filtered_events AS (
+            SELECT
+                e.event_date,
+                e.user_id,
+                e.button_name,
+                e.screen_name
+            FROM `{events_table}` AS e
+            INNER JOIN dedup_customers AS c
+                ON e.user_id = c.user_id
+            WHERE
+                e.user_id IS NOT NULL
+                AND e.user_id != ''
+                AND e.button_name IS NOT NULL
+                AND e.button_name != ''
+                {where_sql}
+        ),
+        kpi_summary AS (
+            SELECT
+                COUNT(*) AS total_clicks,
+                COUNT(DISTINCT user_id) AS unique_users
+            FROM filtered_events
+        ),
+        top_button AS (
+            SELECT
+                button_name,
+                COUNT(*) AS total_clicks
+            FROM filtered_events
+            GROUP BY button_name
+            ORDER BY total_clicks DESC, button_name ASC
+            LIMIT 1
+        ),
+        daily_trend AS (
+            SELECT
+                event_date AS label,
+                COUNT(*) AS total_clicks
+            FROM filtered_events
+            GROUP BY event_date
+        ),
+        feature_distribution AS (
+            SELECT
+                COALESCE(NULLIF(screen_name, ''), 'unknown') AS label,
+                COUNT(*) AS total_clicks
+            FROM filtered_events
+            GROUP BY label
+        )
+        SELECT
+            (
+                SELECT AS STRUCT
+                    ks.total_clicks,
+                    ks.unique_users,
+                    CASE
+                        WHEN ks.unique_users = 0 THEN 0.0
+                        ELSE SAFE_DIVIDE(CAST(ks.total_clicks AS FLOAT64), CAST(ks.unique_users AS FLOAT64))
+                    END AS avg_clicks_per_user,
+                    (
+                        SELECT AS STRUCT
+                            tb.button_name,
+                            tb.total_clicks
+                        FROM top_button tb
+                    ) AS top_button
+                FROM kpi_summary ks
+            ) AS kpi,
+            ARRAY(
+                SELECT AS STRUCT
+                    dt.label,
+                    dt.total_clicks
+                FROM daily_trend dt
+                ORDER BY dt.label ASC
+            ) AS daily_trend,
+            ARRAY(
+                SELECT AS STRUCT
+                    fd.label,
+                    fd.total_clicks
+                FROM feature_distribution fd
+                ORDER BY fd.total_clicks DESC, fd.label ASC
+            ) AS feature_distribution;
+        """
+
+        rows = self._execute_query(query, params)
+        if not rows:
+            return {
+                "kpi": {
+                    "total_clicks": 0,
+                    "unique_users": 0,
+                    "avg_clicks_per_user": 0.0,
+                    "top_button": None,
+                },
+                "daily_trend": [],
+                "feature_distribution": [],
+            }
+
+        return rows[0]
+
 
 _repo_instance: Optional[BigQueryRepository] = None
 

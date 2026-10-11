@@ -1,22 +1,11 @@
 {
   "info": {
-    "_postman_id": "a9b1c2d3-e4f5-6789-0123-abcdefabcdef",
+    "_postman_id": "8e905b04-a3ea-44ee-b82e-c44984529df0",
     "name": "Customer Journey Analytics API",
     "description": "Collection resmi untuk pengujian REST API Analisis Customer Journey dari Google BigQuery (FastAPI).",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "27250335"
   },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://127.0.0.1:8000",
-      "type": "string"
-    },
-    {
-      "key": "api_key",
-      "value": "development-secret-key-change-in-production",
-      "type": "string"
-    }
-  ],
   "item": [
     {
       "name": "1. Health & Readiness",
@@ -28,8 +17,12 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health",
-              "host": ["{{base_url}}"],
-              "path": ["health"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Memeriksa apakah service aplikasi berjalan. Tidak memicu query BigQuery."
           },
@@ -42,8 +35,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/ready",
-              "host": ["{{base_url}}"],
-              "path": ["health", "ready"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
             },
             "description": "Memverifikasi apakah kredensial dan koneksi Google BigQuery siap menerima traffic."
           },
@@ -67,8 +65,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/button-clicks?page=1&page_size=50",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -97,8 +101,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/button-clicks?start_date=2026-09-01&end_date=2026-09-30&page=1&page_size=50",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ],
               "query": [
                 {
                   "key": "start_date",
@@ -129,30 +139,35 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}",
-                "type": "text"
+                "value": "{{api_key}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/button-clicks?role=Sales&region=Jawa Barat&depo=Depo Tangerang&area=Tangerang Kota",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"],
+              "raw": "{{base_url}}/api/v1/button-clicks?role=Retailer (Small)&region=Jabobeka&depo=DEPO BEKASI&area=Area 2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ],
               "query": [
                 {
                   "key": "role",
-                  "value": "Sales"
+                  "value": "Retailer (Small)"
                 },
                 {
                   "key": "region",
-                  "value": "Jawa Barat"
+                  "value": "Jabobeka"
                 },
                 {
                   "key": "depo",
-                  "value": "Depo Tangerang"
+                  "value": "DEPO BEKASI"
                 },
                 {
                   "key": "area",
-                  "value": "Tangerang Kota"
+                  "value": "Area 2"
                 }
               ]
             },
@@ -167,26 +182,31 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}",
-                "type": "text"
+                "value": "{{api_key}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/button-clicks?screen_name=checkout&button_name=checkout_submit&event_name=begin_checkout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"],
+              "raw": "{{base_url}}/api/v1/button-clicks?screen_name=HomeScreen&button_name=hot_product_detail&event_name=button_click",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ],
               "query": [
                 {
                   "key": "screen_name",
-                  "value": "checkout"
+                  "value": "HomeScreen"
                 },
                 {
                   "key": "button_name",
-                  "value": "checkout_submit"
+                  "value": "hot_product_detail"
                 },
                 {
                   "key": "event_name",
-                  "value": "begin_checkout"
+                  "value": "button_click"
                 }
               ]
             },
@@ -206,18 +226,24 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}",
-                "type": "text"
+                "value": "{{api_key}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=checkout_submit&page=1&page_size=50",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks", "users"],
+              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=cart_icon&page=1&page_size=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "users"
+              ],
               "query": [
                 {
                   "key": "button_name",
-                  "value": "checkout_submit",
+                  "value": "cart_icon",
                   "description": "Parameter wajib"
                 },
                 {
@@ -241,18 +267,24 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}",
-                "type": "text"
+                "value": "{{api_key}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=checkout_submit&start_date=2026-09-01&end_date=2026-09-30&role=Sales&region=Jawa Barat&page=1&page_size=50",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks", "users"],
+              "raw": "{{base_url}}/api/v1/button-clicks/users?button_name=back_button_search&start_date=2026-09-01&end_date=2026-09-30&role=Grosir (Medium)&region=Jabobeka&page=1&page_size=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "users"
+              ],
               "query": [
                 {
                   "key": "button_name",
-                  "value": "checkout_submit"
+                  "value": "back_button_search"
                 },
                 {
                   "key": "start_date",
@@ -264,11 +296,11 @@
                 },
                 {
                   "key": "role",
-                  "value": "Sales"
+                  "value": "Grosir (Medium)"
                 },
                 {
                   "key": "region",
-                  "value": "Jawa Barat"
+                  "value": "Jabobeka"
                 },
                 {
                   "key": "page",
@@ -296,18 +328,24 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}",
-                "type": "text"
+                "value": "{{api_key}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/button-clicks/events?button_name=checkout_submit&page=1&page_size=20",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks", "events"],
+              "raw": "{{base_url}}/api/v1/button-clicks/events?button_name=back_button_search&page=1&page_size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "events"
+              ],
               "query": [
                 {
                   "key": "button_name",
-                  "value": "checkout_submit"
+                  "value": "back_button_search"
                 },
                 {
                   "key": "page",
@@ -341,8 +379,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/button-clicks?start_date=2026-09-30&end_date=2026-09-01",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ],
               "query": [
                 {
                   "key": "start_date",
@@ -371,8 +415,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/button-clicks/users",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks", "users"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "users"
+              ]
             },
             "description": "Menguji respon error saat memanggil endpoint users tanpa menyertakan button_name."
           },
@@ -391,14 +442,191 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/button-clicks",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "button-clicks"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks"
+              ]
             },
             "description": "Menguji respon penolakan 401 UNAUTHORIZED saat X-API-Key tidak valid."
           },
           "response": []
         }
       ]
+    },
+    {
+      "name": "6. Endpoint Dashboard Analytics",
+      "item": [
+        {
+          "name": "Dashboard Default (last_7_days)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "dashboard"
+              ]
+            },
+            "description": "Mengambil KPI dan grafik dashboard dengan period default last_7_days."
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard - last_30_days + Filter Region/Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/dashboard?period=last_30_days&region=Jabobeka&role=Grosir (Big)",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "last_30_days"
+                },
+                {
+                  "key": "region",
+                  "value": "Jabobeka"
+                },
+                {
+                  "key": "role",
+                  "value": "Grosir (Big)"
+                }
+              ]
+            },
+            "description": "Contoh penggunaan period preset 30 hari dengan filter customer opsional."
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard - Custom Date + Full Filter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/dashboard?period=custom&start_date=2026-08-01&end_date=2026-09-30&role=Retailer (Small)&depo=DEPO BEKASI&region=Jabobeka&area=Area 2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "custom"
+                },
+                {
+                  "key": "start_date",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "role",
+                  "value": "Retailer (Small)"
+                },
+                {
+                  "key": "depo",
+                  "value": "DEPO BEKASI"
+                },
+                {
+                  "key": "region",
+                  "value": "Jabobeka"
+                },
+                {
+                  "key": "area",
+                  "value": "Area 2"
+                }
+              ]
+            },
+            "description": "Contoh period custom (wajib start_date & end_date) dengan kombinasi filter area/region/depo/role."
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard - Validation Error Custom Tanpa Tanggal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/button-clicks/dashboard?period=custom",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "button-clicks",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "custom"
+                }
+              ]
+            },
+            "description": "Menguji INVALID_DATE_RANGE ketika period=custom tanpa start_date dan end_date."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "api_key",
+      "value": "development-secret-key-change-in-production"
     }
   ]
 }
