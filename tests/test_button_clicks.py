@@ -61,7 +61,7 @@ def test_button_clicks_summary_with_customer_filters(client, mock_repo):
 
 def test_button_clicks_summary_supports_multiple_values(client):
     response = client.get(
-        "/api/v1/button-clicks?button_name=checkout_submit,%20promo_banner_click"
+        "/api/v1/button-clicks?button_name=submit,%20banner"
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -129,13 +129,13 @@ def test_sql_query_construction_and_deduplication(test_settings):
     assert "e.event_date >= @start_date" in where_clauses
     assert "e.event_date <= @end_date" in where_clauses
     assert "c.role IN UNNEST(@role)" in where_clauses
-    assert "e.button_name IN UNNEST(@button_name)" in where_clauses
+    assert any("LOWER(e.button_name) LIKE @button_name_keyword_0" in clause for clause in where_clauses)
 
     param_names = [p.name for p in params]
     assert "start_date" in param_names
     assert "end_date" in param_names
     assert "role" in param_names
-    assert "button_name" in param_names
+    assert "button_name_keyword_0" in param_names
 
 
 def test_multi_value_filters_are_trimmed_and_parameterized(test_settings):
@@ -148,6 +148,11 @@ def test_multi_value_filters_are_trimmed_and_parameterized(test_settings):
     where_clauses, params = repo._build_where_clauses(filters)
 
     assert "c.role IN UNNEST(@role)" in where_clauses
-    assert "e.button_name IN UNNEST(@button_name)" in where_clauses
-    assert {parameter.name for parameter in params} == {"role", "button_name"}
+    assert any("LOWER(e.button_name) LIKE @button_name_keyword_0" in clause for clause in where_clauses)
+    assert any("LOWER(e.button_name) LIKE @button_name_keyword_1" in clause for clause in where_clauses)
+    assert {parameter.name for parameter in params} == {
+        "role",
+        "button_name_keyword_0",
+        "button_name_keyword_1",
+    }
     assert next(parameter for parameter in params if parameter.name == "role").values == ["Sales", "staff"]

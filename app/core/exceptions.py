@@ -69,6 +69,17 @@ class BigQueryReadinessError(AppException):
         )
 
 
+class InvalidFilterFieldException(AppException):
+    """Exception for an unsupported filter-options field."""
+
+    def __init__(self, message: str = "Field filter tidak didukung."):
+        super().__init__(
+            code="VALIDATION_ERROR",
+            message=message,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+
 # ==============================================================================
 # FastAPI Exception Handlers
 # ==============================================================================

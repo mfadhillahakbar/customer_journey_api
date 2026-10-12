@@ -105,6 +105,7 @@ Dokumentasi API:
 | GET | `/api/v1/button-clicks` | Ringkasan statistik klik |
 | GET | `/api/v1/button-clicks/users` | Daftar pengguna berdasarkan tombol |
 | GET | `/api/v1/button-clicks/events` | Detail event mentah |
+| GET | `/api/v1/filters/{field}` | Opsi filter unik untuk checkbox atau multi-select |
 
 Endpoint selain health check menggunakan header autentikasi:
 
@@ -132,6 +133,29 @@ Filter teks mendukung multiple values yang dipisahkan koma:
 ```
 
 Spasi di sekitar koma diabaikan dan nilai kosong dilewati. Filter tunggal tetap berfungsi seperti sebelumnya. Parameter `button_name` wajib pada endpoint `/api/v1/button-clicks/users`.
+
+`button_name` menggunakan partial match tanpa membedakan huruf besar-kecil. Beberapa keyword
+digabung dengan logika OR, sehingga `?button_name=Product,Checkout` mencocokkan nama tombol
+yang mengandung `Product` atau `Checkout`.
+
+### Opsi Filter Master dan Event
+
+Gunakan endpoint berikut untuk mengisi checkbox atau multi-select:
+
+```bash
+curl -G "http://127.0.0.1:8000/api/v1/filters/button_name" \
+  -H "X-API-Key: ${API_KEY}" \
+  --data-urlencode "search=checkout" \
+  --data-urlencode "page=1" \
+  --data-urlencode "page_size=50"
+```
+
+Field yang didukung mencakup `role`, `depo`, `region`, `area`, `user_id`, `screen_name`,
+`button_name`, `event_name`, `event_date`, `event_timestamp`, `user_pseudo_id`,
+`ga_session_id`, `ga_session_number`, `platform`, `device_category`, `device_brand`,
+`device_model`, `os_version`, `city`, dan `app_version`. Nilai dikembalikan unik,
+tidak null/kosong, sudah di-trim, diurutkan alfabetis, dan mendukung `search`, `page`,
+serta `page_size`.
 
 Contoh request:
 

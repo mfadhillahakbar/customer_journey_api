@@ -45,6 +45,13 @@ class FiltersApplied(BaseModel):
     event_name: Optional[str] = None
 
 
+class FilterOptionsResponse(BaseModel):
+    """Distinct values available for a filter control."""
+    field: str
+    data: List[str]
+    pagination: PaginationMetadata
+
+
 class ButtonClickItem(BaseModel):
     """Item agregasi statistik klik tombol."""
     screen_name: Optional[str] = Field(default=None, description="Nama screen (bisa null)")

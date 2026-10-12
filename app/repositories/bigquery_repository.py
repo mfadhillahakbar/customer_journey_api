@@ -1,11 +1,12 @@
 import logging
 import os
+import re
 from typing import Any, Dict, List, Optional, Tuple
 from google.cloud import bigquery
 from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
 from google.api_core.exceptions import GoogleAPICallError
 from app.core.config import Settings, get_settings
-from app.core.exceptions import BigQueryExecutionError, BigQueryReadinessError
+from app.core.exceptions import BigQueryExecutionError, BigQueryReadinessError, InvalidFilterFieldException
 from app.schemas.button_clicks import ButtonClickFilters, split_filter_values
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ class BigQueryRepository:
         Guarantees parameterized queries and prevents SQL injection.
         """
         clauses: List[str] = []
-        parameters: List[ScalarQueryParameter] = []
+        parameters: List[Any] = []
 
         def add_multi_value_filter(column: str, name: str, value: Optional[str]) -> None:
             values = split_filter_values(value)
@@ -99,14 +100,102 @@ class BigQueryRepository:
         add_multi_value_filter("c.area", "area", filters.area)
 
         # Filter navigasi pada tabel event e
+        if filters.button_name:
+            button_keywords = split_filter_values(filters.button_name)
+            if button_keywords:
+                like_clauses = []
+                for index, keyword in enumerate(button_keywords):
+                    parameter_name = f"button_name_keyword_{index}"
+                    like_clauses.append(f"LOWER(e.button_name) LIKE @{parameter_name}")
+                    parameters.append(ScalarQueryParameter(parameter_name, "STRING", f"%{keyword.lower()}%"))
+                clauses.append("(" + " OR ".join(like_clauses) + ")")
+
         add_multi_value_filter("e.screen_name", "screen_name", filters.screen_name)
-        add_multi_value_filter("e.button_name", "button_name", filters.button_name)
         add_multi_value_filter("e.event_name", "event_name", filters.event_name)
 
         # Filter spesifik user_id jika ada
         add_multi_value_filter("e.user_id", "user_id", user_id)
 
         return clauses, parameters
+
+    def get_filter_options(
+        self,
+        field: str,
+        search: Optional[str],
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[str], int]:
+        """Return distinct, non-empty filter values from an allowlisted column."""
+        customer_fields = {
+            **self.settings.CUSTOMER_COLUMN_MAPPING,
+            "user_id": "user_id",
+        }
+        event_fields = {
+            "event_date": "event_date",
+            "event_timestamp": "event_timestamp",
+            "screen_name": "screen_name",
+            "button_name": "button_name",
+            "event_name": "event_name",
+            "user_pseudo_id": "user_pseudo_id",
+            "ga_session_id": "ga_session_id",
+            "ga_session_number": "ga_session_number",
+            "platform": "platform",
+            "device_category": "device_category",
+            "device_brand": "device_brand",
+            "device_model": "device_model",
+            "os_version": "os_version",
+            "city": "city",
+            "app_version": "app_version",
+        }
+
+        if field in customer_fields:
+            table_name = self.settings.BQ_CUSTOMERS_TABLE
+            column_name = customer_fields[field]
+            source_alias = "source"
+        elif field in event_fields:
+            table_name = self.settings.BQ_EVENTS_TABLE
+            column_name = event_fields[field]
+            source_alias = "source"
+        else:
+            raise InvalidFilterFieldException(f"Field filter tidak didukung: {field}.")
+
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", column_name):
+            raise InvalidFilterFieldException(f"Konfigurasi kolom filter tidak valid: {field}.")
+
+        parameters: List[Any] = [
+            ScalarQueryParameter("limit", "INT64", page_size),
+            ScalarQueryParameter("offset", "INT64", (page - 1) * page_size),
+        ]
+        search_clause = ""
+        normalized_search = search.strip() if search else ""
+        if normalized_search:
+            search_clause = "AND LOWER(CAST(source_value AS STRING)) LIKE @search"
+            parameters.append(ScalarQueryParameter("search", "STRING", f"%{normalized_search.lower()}%"))
+
+        query = f"""
+        WITH distinct_values AS (
+            SELECT DISTINCT
+                TRIM(CAST({source_alias}.`{column_name}` AS STRING)) AS source_value
+            FROM `{table_name}` AS {source_alias}
+            WHERE {source_alias}.`{column_name}` IS NOT NULL
+              AND TRIM(CAST({source_alias}.`{column_name}` AS STRING)) != ''
+        )
+        SELECT
+            source_value AS value,
+            COUNT(*) OVER() AS total_records
+        FROM distinct_values
+        WHERE TRUE
+            {search_clause}
+        ORDER BY value ASC
+        LIMIT @limit OFFSET @offset;
+        """
+
+        rows = self._execute_query(query, parameters)
+        if not rows:
+            return [], 0
+
+        total_records = rows[0]["total_records"]
+        return [row["value"] for row in rows], total_records
 
     def _execute_query(
         self,

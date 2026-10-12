@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings, get_settings
-from app.core.exceptions import BigQueryExecutionError
+from app.core.exceptions import BigQueryExecutionError, InvalidFilterFieldException
 from app.main import create_app
 from app.repositories.bigquery_repository import BigQueryRepository, get_bigquery_repository
 from app.schemas.button_clicks import ButtonClickFilters, split_filter_values
@@ -70,8 +70,11 @@ class MockBigQueryRepository(BigQueryRepository):
 
         # Filter by button_name if provided
         if filters.button_name:
-            values = split_filter_values(filters.button_name)
-            all_data = [d for d in all_data if d["button_name"] in values] if values else []
+            keywords = [value.lower() for value in split_filter_values(filters.button_name)]
+            all_data = [
+                d for d in all_data
+                if any(keyword in d["button_name"].lower() for keyword in keywords)
+            ] if keywords else []
 
         # Filter by screen_name if provided
         if filters.screen_name:
@@ -172,6 +175,32 @@ class MockBigQueryRepository(BigQueryRepository):
         ]
 
         return events, len(events)
+
+    def get_filter_options(
+        self,
+        field: str,
+        search: Optional[str],
+        page: int,
+        page_size: int,
+    ) -> Tuple[List[str], int]:
+        values_by_field = {
+            "role": ["Sales", "Staff"],
+            "depo": ["Depo Jakarta", "Depo Tangerang"],
+            "region": ["Jawa Barat", "Jawa Timur"],
+            "area": ["Tangerang Barat", "Tangerang Kota"],
+            "screen_name": ["checkout", "home_page"],
+            "button_name": ["checkout_submit", "floating_help_btn", "promo_banner_click"],
+            "event_name": ["banner_click", "begin_checkout", "help_click"],
+            "user_id": ["EX09202601674", "EX09202609999"],
+        }
+        if field not in values_by_field:
+            raise InvalidFilterFieldException(f"Field filter tidak didukung: {field}.")
+        values = values_by_field[field]
+        if search and search.strip():
+            keyword = search.strip().lower()
+            values = [value for value in values if keyword in value.lower()]
+        start_idx = (page - 1) * page_size
+        return values[start_idx:start_idx + page_size], len(values)
 
     def get_dashboard_analytics(self, filters: ButtonClickFilters) -> Dict[str, Any]:
         self.last_filters = filters

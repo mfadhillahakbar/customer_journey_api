@@ -20,6 +20,7 @@ from app.schemas.button_clicks import (
     ButtonClickUserItem,
     ButtonClickUsersResponse,
     CustomerDetail,
+    FilterOptionsResponse,
     FiltersApplied,
     RawEventItem,
     RawEventsResponse,
@@ -55,6 +56,26 @@ class ButtonClicksService:
             page_size=page_size,
             total_records=total_records,
             total_pages=total_pages,
+        )
+
+    def get_filter_options(
+        self,
+        field: str,
+        search: Optional[str],
+        page: int,
+        page_size: int,
+    ) -> FilterOptionsResponse:
+        """Load distinct values for a filter control."""
+        values, total_records = self.repository.get_filter_options(
+            field=field,
+            search=search,
+            page=page,
+            page_size=page_size,
+        )
+        return FilterOptionsResponse(
+            field=field,
+            data=values,
+            pagination=self._calculate_pagination(page, page_size, total_records),
         )
 
     def get_summary(

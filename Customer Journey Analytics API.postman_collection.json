@@ -617,6 +617,85 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "7. Filter Options",
+      "item": [
+        {
+          "name": "Opsi Button Name (Search)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/filters/button_name?search=checkout&page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "filters", "button_name"],
+              "query": [
+                {"key": "search", "value": "checkout"},
+                {"key": "page", "value": "1"},
+                {"key": "page_size", "value": "50"}
+              ]
+            },
+            "description": "Opsi button_name unik dengan pencarian partial."
+          },
+          "response": []
+        },
+        {
+          "name": "Opsi Customer Role (Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/filters/role?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "filters", "role"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "page_size", "value": "20"}
+              ]
+            },
+            "description": "Opsi role customer unik dengan pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Opsi Screen Name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/filters/screen_name?search=home&page=1&page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "filters", "screen_name"],
+              "query": [
+                {"key": "search", "value": "home"},
+                {"key": "page", "value": "1"},
+                {"key": "page_size", "value": "50"}
+              ]
+            },
+            "description": "Opsi screen_name event dengan pencarian partial."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
