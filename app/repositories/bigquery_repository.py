@@ -2,11 +2,11 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
 from google.cloud import bigquery
-from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
+from google.cloud.bigquery import ArrayQueryParameter, QueryJobConfig, ScalarQueryParameter
 from google.api_core.exceptions import GoogleAPICallError
 from app.core.config import Settings, get_settings
 from app.core.exceptions import BigQueryExecutionError, BigQueryReadinessError
-from app.schemas.button_clicks import ButtonClickFilters
+from app.schemas.button_clicks import ButtonClickFilters, split_filter_values
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,12 @@ class BigQueryRepository:
         clauses: List[str] = []
         parameters: List[ScalarQueryParameter] = []
 
+        def add_multi_value_filter(column: str, name: str, value: Optional[str]) -> None:
+            values = split_filter_values(value)
+            if values:
+                clauses.append(f"{column} IN UNNEST(@{name})")
+                parameters.append(ArrayQueryParameter(name, "STRING", values))
+
         # Filter rentang tanggal pada e.event_date
         if filters.start_date:
             clauses.append("e.event_date >= @start_date")
@@ -87,39 +93,18 @@ class BigQueryRepository:
             parameters.append(ScalarQueryParameter("end_date", "STRING", str(filters.end_date)))
 
         # Filter master customer pada tabel c (role, depo, region, area)
-        if filters.role:
-            clauses.append("c.role = @role")
-            parameters.append(ScalarQueryParameter("role", "STRING", filters.role))
-
-        if filters.depo:
-            clauses.append("c.depo = @depo")
-            parameters.append(ScalarQueryParameter("depo", "STRING", filters.depo))
-
-        if filters.region:
-            clauses.append("c.region = @region")
-            parameters.append(ScalarQueryParameter("region", "STRING", filters.region))
-
-        if filters.area:
-            clauses.append("c.area = @area")
-            parameters.append(ScalarQueryParameter("area", "STRING", filters.area))
+        add_multi_value_filter("c.role", "role", filters.role)
+        add_multi_value_filter("c.depo", "depo", filters.depo)
+        add_multi_value_filter("c.region", "region", filters.region)
+        add_multi_value_filter("c.area", "area", filters.area)
 
         # Filter navigasi pada tabel event e
-        if filters.screen_name:
-            clauses.append("e.screen_name = @screen_name")
-            parameters.append(ScalarQueryParameter("screen_name", "STRING", filters.screen_name))
-
-        if filters.button_name:
-            clauses.append("e.button_name = @button_name")
-            parameters.append(ScalarQueryParameter("button_name", "STRING", filters.button_name))
-
-        if filters.event_name:
-            clauses.append("e.event_name = @event_name")
-            parameters.append(ScalarQueryParameter("event_name", "STRING", filters.event_name))
+        add_multi_value_filter("e.screen_name", "screen_name", filters.screen_name)
+        add_multi_value_filter("e.button_name", "button_name", filters.button_name)
+        add_multi_value_filter("e.event_name", "event_name", filters.event_name)
 
         # Filter spesifik user_id jika ada
-        if user_id:
-            clauses.append("e.user_id = @user_id")
-            parameters.append(ScalarQueryParameter("user_id", "STRING", user_id))
+        add_multi_value_filter("e.user_id", "user_id", user_id)
 
         return clauses, parameters
 

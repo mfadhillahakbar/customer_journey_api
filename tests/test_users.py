@@ -52,6 +52,17 @@ def test_get_users_with_customer_filter(client):
     assert users[0]["customer"]["area"] == "Tangerang Kota"
 
 
+def test_get_users_supports_multiple_customer_values(client):
+    response = client.get(
+        "/api/v1/button-clicks/users?button_name=checkout_submit&area=Tangerang%20Kota,%20Tangerang%20Barat"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert {user["customer"]["area"] for user in response.json()["data"]} == {
+        "Tangerang Kota",
+        "Tangerang Barat",
+    }
+
+
 def test_get_raw_events_optional_endpoint(client):
     """Test Endpoint D (raw events inspection)."""
     url = "/api/v1/button-clicks/events?button_name=checkout_submit&page=1&page_size=10"

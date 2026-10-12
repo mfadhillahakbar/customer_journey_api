@@ -59,6 +59,19 @@ def test_button_clicks_summary_with_customer_filters(client, mock_repo):
     assert mock_repo.last_filters.area == "Tangerang Kota"
 
 
+def test_button_clicks_summary_supports_multiple_values(client):
+    response = client.get(
+        "/api/v1/button-clicks?button_name=checkout_submit,%20promo_banner_click"
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    body = response.json()
+    assert {item["button_name"] for item in body["data"]} == {
+        "checkout_submit",
+        "promo_banner_click",
+    }
+
+
 def test_button_clicks_summary_empty_result(client, mock_repo):
     """Test that empty query results return empty list and zero totals, not an error."""
     mock_repo.empty_result = True
@@ -115,11 +128,26 @@ def test_sql_query_construction_and_deduplication(test_settings):
 
     assert "e.event_date >= @start_date" in where_clauses
     assert "e.event_date <= @end_date" in where_clauses
-    assert "c.role = @role" in where_clauses
-    assert "e.button_name = @button_name" in where_clauses
+    assert "c.role IN UNNEST(@role)" in where_clauses
+    assert "e.button_name IN UNNEST(@button_name)" in where_clauses
 
     param_names = [p.name for p in params]
     assert "start_date" in param_names
     assert "end_date" in param_names
     assert "role" in param_names
     assert "button_name" in param_names
+
+
+def test_multi_value_filters_are_trimmed_and_parameterized(test_settings):
+    repo = BigQueryRepository(settings=test_settings)
+    filters = ButtonClickFilters(
+        role=" Sales, staff, ,",
+        button_name="Buy, Checkout",
+    )
+
+    where_clauses, params = repo._build_where_clauses(filters)
+
+    assert "c.role IN UNNEST(@role)" in where_clauses
+    assert "e.button_name IN UNNEST(@button_name)" in where_clauses
+    assert {parameter.name for parameter in params} == {"role", "button_name"}
+    assert next(parameter for parameter in params if parameter.name == "role").values == ["Sales", "staff"]

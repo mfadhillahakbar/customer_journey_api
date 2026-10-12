@@ -5,6 +5,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.common import PaginationMetadata
 
 
+def split_filter_values(value: Optional[str]) -> List[str]:
+    """Split a comma-separated filter into non-empty, trimmed values."""
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 class ButtonClickFilters(BaseModel):
     """Filter parameters used across button analytics endpoints."""
     start_date: Optional[date] = Field(default=None, description="Tanggal awal (YYYY-MM-DD, inklusif)")

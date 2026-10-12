@@ -7,7 +7,7 @@ from app.core.config import Settings, get_settings
 from app.core.exceptions import BigQueryExecutionError
 from app.main import create_app
 from app.repositories.bigquery_repository import BigQueryRepository, get_bigquery_repository
-from app.schemas.button_clicks import ButtonClickFilters
+from app.schemas.button_clicks import ButtonClickFilters, split_filter_values
 
 
 class MockBigQueryRepository(BigQueryRepository):
@@ -70,11 +70,13 @@ class MockBigQueryRepository(BigQueryRepository):
 
         # Filter by button_name if provided
         if filters.button_name:
-            all_data = [d for d in all_data if d["button_name"] == filters.button_name]
+            values = split_filter_values(filters.button_name)
+            all_data = [d for d in all_data if d["button_name"] in values] if values else []
 
         # Filter by screen_name if provided
         if filters.screen_name:
-            all_data = [d for d in all_data if d["screen_name"] == filters.screen_name]
+            values = split_filter_values(filters.screen_name)
+            all_data = [d for d in all_data if d["screen_name"] in values] if values else []
 
         total_records = len(all_data)
         start_idx = (page - 1) * page_size
@@ -118,14 +120,11 @@ class MockBigQueryRepository(BigQueryRepository):
             },
         ]
 
-        if filters.role:
-            all_users = [u for u in all_users if u["role"] == filters.role]
-        if filters.depo:
-            all_users = [u for u in all_users if u["depo"] == filters.depo]
-        if filters.region:
-            all_users = [u for u in all_users if u["region"] == filters.region]
-        if filters.area:
-            all_users = [u for u in all_users if u["area"] == filters.area]
+        for field in ("role", "depo", "region", "area"):
+            value = getattr(filters, field)
+            if value:
+                values = split_filter_values(value)
+                all_users = [u for u in all_users if u[field] in values] if values else []
 
         total_records = len(all_users)
         start_idx = (page - 1) * page_size
