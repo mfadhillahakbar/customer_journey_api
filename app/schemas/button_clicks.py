@@ -171,6 +171,8 @@ class DashboardFiltersApplied(BaseModel):
     region: Optional[str] = None
     depo: Optional[str] = None
     area: Optional[str] = None
+    screen_name: Optional[str] = None
+    button_name: Optional[str] = None
 
 
 class DashboardCharts(BaseModel):

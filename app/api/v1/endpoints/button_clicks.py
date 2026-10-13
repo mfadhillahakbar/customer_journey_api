@@ -163,7 +163,7 @@ async def get_raw_events(
     description=(
         "Mengembalikan KPI dan data grafik dashboard dalam satu response. "
         "Mendukung period preset (7 hari terakhir, 30 hari terakhir, kemarin, hari ini, custom) "
-        "serta filter opsional role, depo, region, dan area."
+        "serta filter opsional role, depo, region, area, screen_name, dan button_name."
     ),
 )
 async def get_dashboard_analytics(
@@ -174,6 +174,8 @@ async def get_dashboard_analytics(
     depo: Optional[str] = Query(default=None, description="Filter depo customer dari tabel master"),
     region: Optional[str] = Query(default=None, description="Filter region customer dari tabel master"),
     area: Optional[str] = Query(default=None, description="Filter area customer dari tabel master"),
+    screen_name: Optional[str] = Query(default=None, description="Filter screen_name"),
+    button_name: Optional[str] = Query(default=None, description="Filter button_name partial"),
     service: ButtonClicksService = Depends(),
 ) -> DashboardAnalyticsResponse:
     """Endpoint dashboard agregasi KPI dan grafik dalam satu payload."""
@@ -185,4 +187,6 @@ async def get_dashboard_analytics(
         depo=depo,
         region=region,
         area=area,
+        screen_name=screen_name,
+        button_name=button_name,
     )

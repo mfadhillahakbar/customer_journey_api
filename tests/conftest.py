@@ -22,6 +22,7 @@ class MockBigQueryRepository(BigQueryRepository):
         self.empty_result: bool = False
         self.is_ready: bool = True
         self.last_filters: Optional[ButtonClickFilters] = None
+        self.last_trend_by_weekday: Optional[bool] = None
 
     def check_connection(self) -> bool:
         return self.is_ready
@@ -202,8 +203,13 @@ class MockBigQueryRepository(BigQueryRepository):
         start_idx = (page - 1) * page_size
         return values[start_idx:start_idx + page_size], len(values)
 
-    def get_dashboard_analytics(self, filters: ButtonClickFilters) -> Dict[str, Any]:
+    def get_dashboard_analytics(
+        self,
+        filters: ButtonClickFilters,
+        trend_by_weekday: bool = False,
+    ) -> Dict[str, Any]:
         self.last_filters = filters
+        self.last_trend_by_weekday = trend_by_weekday
 
         if self.should_fail:
             raise BigQueryExecutionError("Simulated BigQuery failure for testing.")

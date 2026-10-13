@@ -236,6 +236,8 @@ class ButtonClicksService:
         depo: Optional[str],
         region: Optional[str],
         area: Optional[str],
+        screen_name: Optional[str],
+        button_name: Optional[str],
     ) -> DashboardAnalyticsResponse:
         """Process unified dashboard analytics response (KPI + charts)."""
         resolved_start_date, resolved_end_date = self._resolve_dashboard_date_range(
@@ -251,9 +253,15 @@ class ButtonClicksService:
             depo=depo,
             region=region,
             area=area,
+            screen_name=screen_name,
+            button_name=button_name,
         )
 
-        payload = self.repository.get_dashboard_analytics(filters=filters)
+        trend_by_weekday = (resolved_end_date - resolved_start_date).days + 1 >= 7
+        payload = self.repository.get_dashboard_analytics(
+            filters=filters,
+            trend_by_weekday=trend_by_weekday,
+        )
         kpi_raw = payload.get("kpi") or {}
         top_button_raw = kpi_raw.get("top_button") or {}
 
@@ -293,6 +301,8 @@ class ButtonClicksService:
                 region=region,
                 depo=depo,
                 area=area,
+                screen_name=screen_name,
+                button_name=button_name,
             ),
         )
 

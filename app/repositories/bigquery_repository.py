@@ -521,6 +521,7 @@ class BigQueryRepository:
     def get_dashboard_analytics(
         self,
         filters: ButtonClickFilters,
+        trend_by_weekday: bool = False,
     ) -> Dict[str, Any]:
         """
         Endpoint Dashboard: mengembalikan KPI dan chart dalam satu query.
@@ -531,6 +532,18 @@ class BigQueryRepository:
 
         events_table = self.settings.BQ_EVENTS_TABLE
         customers_table = self.settings.BQ_CUSTOMERS_TABLE
+
+        if trend_by_weekday:
+            daily_trend_select = """
+                FORMAT_DATE('%A', event_date) AS label,
+                MOD(EXTRACT(DAYOFWEEK FROM event_date) + 5, 7) AS weekday_order
+            """
+            daily_trend_group = "weekday_order, label"
+            daily_trend_order = "dt.weekday_order ASC"
+        else:
+            daily_trend_select = "event_date AS label, 0 AS weekday_order"
+            daily_trend_group = "label, weekday_order"
+            daily_trend_order = "dt.label ASC"
 
         query = f"""
         WITH dedup_customers AS (
@@ -589,10 +602,10 @@ class BigQueryRepository:
         ),
         daily_trend AS (
             SELECT
-                event_date AS label,
+                {daily_trend_select},
                 COUNT(*) AS total_clicks
             FROM filtered_events
-            GROUP BY event_date
+            GROUP BY {daily_trend_group}
         ),
         feature_distribution AS (
             SELECT
@@ -623,7 +636,7 @@ class BigQueryRepository:
                     dt.label,
                     dt.total_clicks
                 FROM daily_trend dt
-                ORDER BY dt.label ASC
+                ORDER BY {daily_trend_order}
             ) AS daily_trend,
             ARRAY(
                 SELECT AS STRUCT
